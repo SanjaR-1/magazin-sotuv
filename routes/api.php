@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\StatsController;
-use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 
 Route::post('/login', [AuthController::class, 'login']);
