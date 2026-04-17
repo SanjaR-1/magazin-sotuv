@@ -1,48 +1,52 @@
 <?php
+
 namespace App\Models;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
+    use HasFactory, Notifiable, HasApiTokens;
+
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
+        'phone',
         'password',
         'role',
     ];
+
     protected $hidden = [
         'password',
         'remember_token',
     ];
-    protected function casts(): array
+
+    public function customerOrders()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Order::class, 'customer_id');
     }
+
+    public function driverOrders()
+    {
+        return $this->hasMany(Order::class, 'driver_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
-    public function isDriver(): bool
-    {
-        return $this->role === 'driver';
-    }
+
     public function isCustomer(): bool
     {
         return $this->role === 'customer';
     }
-    public function customer()
+
+    public function isDriver(): bool
     {
-        return $this->hasOne(Customer::class);
-    }
-    public function driver()
-    {
-        return $this->hasOne(Driver::class);
+        return $this->role === 'driver';
     }
 }

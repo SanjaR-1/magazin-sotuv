@@ -1,28 +1,42 @@
 <?php
+
 namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+
 class OrderResource extends JsonResource
 {
-    public function toArray($request)
+    public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
-            'customer'   => $this->customer->first_name . ' ' . $this->customer->last_name,
-            'address'    => $this->address->name,
-            'region'     => $this->address->region->name,
-            'status'     => $this->status,
-            'ordered_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'products'   => $this->products->map(function ($product) {
-                return [
-                    'name'     => $product->name,
-                    'price'    => $product->cost,
-                    'quantity' => $product->pivot->quantity,
-                    'total'    => $product->cost * $product->pivot->quantity
-                ];
+            'id' => $this->id,
+
+            'customer_id' => $this->customer_id,
+            'customer_name' => trim($this->customer_first_name . ' ' . $this->customer_last_name),
+            'customer_phone' => $this->customer_phone,
+
+            'driver_id' => $this->driver_id,
+            'driver_name' => $this->whenLoaded('driver', function () {
+                return $this->driver
+                    ? trim($this->driver->first_name . ' ' . $this->driver->last_name)
+                    : null;
             }),
-            'total_amount' => $this->products->sum(function($p) {
-                return $p->cost * $p->pivot->quantity;
-            })
+
+            'region_id' => $this->region_id,
+            'region_name' => $this->whenLoaded('region', fn () => $this->region?->name),
+            'delivery_address' => $this->delivery_address,
+
+            'status' => $this->status,
+            'waiting_minutes' => $this->waiting_minutes,
+
+            'ordered_at' => $this->ordered_at?->toDateTimeString(),
+            'packed_at' => $this->packed_at?->toDateTimeString(),
+            'on_way_at' => $this->on_way_at?->toDateTimeString(),
+            'delivered_at' => $this->delivered_at?->toDateTimeString(),
+            'created_at' => $this->created_at?->toDateTimeString(),
+
+            'items' => OrderItemResource::collection($this->whenLoaded('items')),
         ];
     }
 }

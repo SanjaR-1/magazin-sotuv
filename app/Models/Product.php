@@ -3,36 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Model
 {
-    use SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
+        'Prtype_id',
         'name',
-        'cost',
-        'prtype_id'
+        'description',
+        'price',
+        'stock',
+        'image',
     ];
 
-    // Tovar turi (Kategoriyasi) bilan bog'lanish
-    public function type(): BelongsTo
+    public function type()
     {
-        return $this->belongsTo(Prtype::class, 'prtype_id');
+        return $this->belongsTo(PrType::class, 'Prtype_id');
     }
 
-    // Tovar qaysi buyurtmalarda borligi
-    public function orders(): BelongsToMany
+    public function orderItems()
     {
-        return $this->belongsToMany(Order::class, 'order_product')
-                    ->withPivot('quantity') // Nechta sotilgani (3-mashq uchun kerak bo'ladi)
-                    ->withTimestamps();
+        return $this->hasMany(OrderItem::class);
     }
-
-    // Laravel 10/11 uchun dates ustunini casts orqali yozish tavsiya etiladi
-    protected $casts = [
-        'deleted_at' => 'datetime',
-    ];
 }

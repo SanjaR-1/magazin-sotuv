@@ -1,53 +1,66 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Services\ProductService;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\ProductResource;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
-use App\Http\Resources\ProductResource;
-use App\Services\ProductService;
-use Illuminate\Database\Eloquent\Casts\Json;
+
 class ProductController extends Controller
 {
-    public  function __construct(protected ProductService $productService){
-        $this->middleware('auth:sanctum')->except(['index','show']);   
-        $this->middleware('check.admin')->only(['store','update','destroy']);
-    }
-    public function index()
+    public function __construct(
+        protected ProductService $productService
+    ) {}
+
+    public function index(Request $request)
     {
-        $products=$this->productService->getAllProducts();
+        $perPage = (int) $request->get('per_page', 10);
+
+        $products = $this->productService->paginate($perPage);
+
         return ProductResource::collection($products);
     }
-    public function store(StoreProductRequest $request)
+
+    public function store(StoreProductRequest $request): JsonResponse
     {
-        $product=$this->productService->createProduct($request->validated());
+        $product = $this->productService->store($request->validated());
+
         return response()->json([
-            'success'=>true,
-            'message'=>'muvaffaqiyatli yaratildi!',
-            'data'=> new ProductResource($product),
-        ],201);
+            'success' => true,
+            'message' => 'Product created successfully',
+            'data' => new ProductResource($product),
+        ], 201);
     }
-    public function show(int $id)
+
+    public function show(Product $product): ProductResource
     {
-        $product=$this->productService->getProductById($id);
+        $product = $this->productService->show($product);
+
         return new ProductResource($product);
     }
-    public function update(UpdateProductRequest $request, int $id)
+
+    public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $product=$this->productService->updateProduct($id, $request->validated());
+        $product = $this->productService->update($request->validated(), $product);
+
         return response()->json([
-            'success'=>true,
-            'message'=>'muvaffaqiyatli o\'zgardi',
-            'data'=> new ProductResource($product)
-        ],200);
-}
-    public function destroy(int $id)
+            'success' => true,
+            'message' => 'Product updated successfully',
+            'data' => new ProductResource($product),
+        ]);
+    }
+
+    public function destroy(Product $product): JsonResponse
     {
-        $this->productService->deleteProduct($id);
+        $result = $this->productService->delete($product);
+
         return response()->json([
-            'success'=>true,
-            'message'=>'muvaffaqiyatli o\'chirildi'
-        ],200);
+            'success' => true,
+            'message' => $result['message'],
+        ]);
     }
 }

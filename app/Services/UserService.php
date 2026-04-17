@@ -1,41 +1,63 @@
 <?php
+
 namespace App\Services;
+
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
+
 class UserService
 {
-    public function getAllUsers()
+    public function paginate(int $perPage = 10, ?string $role = null): LengthAwarePaginator
     {
-        return User::latest()->paginate(10);
+        return User::query()
+            ->when($role, function ($query) use ($role) {
+                $query->where('role', $role);
+            })
+            ->latest()
+            ->paginate($perPage);
     }
-    public function createUser(array $data) {
-        return \DB::transaction(function () use ($data) {
-            $user = User::create([
-                'name'     => $data['name'],
-                'email'    => $data['email'],
-                'password' => \Hash::make($data['password']),
-                'role'     => $data['role'],
-            ]);
-            if ($user->role === 'customer') {
-                $user->customer()->create([
-                    'first_name'   => $data['first_name'] ?? $user->name,
-                    'last_name'    => $data['last_name'] ?? '',
-                    'phone_number' => $data['phone_number'],
-                ]);
-            } elseif ($user->role === 'driver') {
-                $user->driver()->create([
-                    'first_name'   => $data['first_name'] ?? $user->name,
-                    'last_name'    => $data['last_name'] ?? '',
-                    'phone_number' => $data['phone_number'],
-                    'is_active'    => true,
+
+    public function show(User $user): User
+    {
+        return $user;
+    }
+
+    public function updateRole(User $user, array $data): User
+    {
+        if ($user->role === 'admin' && $data['role'] !== 'admin') {
+            $adminCount = User::where('role', 'admin')->count();
+
+            if ($adminCount <= 1) {
+                throw ValidationException::withMessages([
+                    'role' => ['Sistemada kamida bitta admin qolishi kerak'],
                 ]);
             }
-            return $user;
-        });
+        }
+
+        $user->update([
+            'role' => $data['role'],
+        ]);
+
+        return $user->fresh();
     }
-    public function deleteUser(int $id)
+
+    public function delete(User $user): array
     {
-        $user = User::findOrFail($id);
-        return $user->delete();
+        if ($user->role === 'admin') {
+            $adminCount = User::where('role', 'admin')->count();
+
+            if ($adminCount <= 1) {
+                throw ValidationException::withMessages([
+                    'user' => ['Oxirgi adminni o‘chirib bo‘lmaydi'],
+                ]);
+            }
+        }
+
+        $user->delete();
+
+        return [
+            'message' => 'User deleted successfully',
+        ];
     }
 }

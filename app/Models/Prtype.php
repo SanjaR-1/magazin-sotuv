@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Region extends Model
+class Prtype extends Model
 {
     use HasFactory;
 
     protected $fillable = ['name'];
 
-    public function orders()
+    public function products()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Product::class);
     }
 }

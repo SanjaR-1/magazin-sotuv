@@ -10,14 +10,19 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers');
-            $table->foreignId('address_id')->constrained('addresses');
-            $table->foreignId('driver_id')->nullable()->constrained('drivers')->onDelete('set null');
+            $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('driver_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('region_id')->constrained('regions')->cascadeOnDelete();
+            $table->string('customer_first_name');
+            $table->string('customer_last_name');
+            $table->string('customer_phone');
+            $table->string('delivery_address');
             $table->enum('status', ['packing', 'on_way', 'delivered'])->default('packing');
-            $table->timestamp('ordered_at')->useCurrent();
-            $table->timestamp('picked_up_at')->nullable();
+            $table->timestamp('ordered_at')->nullable();
+            $table->timestamp('packed_at')->nullable();
+            $table->timestamp('on_way_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
-            $table->softDeletes();
+            $table->timestamps();
         });
     }
     public function down(): void

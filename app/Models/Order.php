@@ -1,58 +1,67 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Order extends Model
 {
-    use SoftDeletes;
+    use HasFactory;
+
+    public const STATUS_PACKING = 'packing';
+    public const STATUS_ON_WAY = 'on_way';
+    public const STATUS_DELIVERED = 'delivered';
+
     protected $fillable = [
         'customer_id',
         'driver_id',
-        'address_id',
+        'region_id',
+        'customer_first_name',
+        'customer_last_name',
+        'customer_phone',
+        'delivery_address',
         'status',
-        'picked_up_at',
+        'ordered_at',
+        'packed_at',
+        'on_way_at',
         'delivered_at',
     ];
+
     protected $casts = [
-        'picked_up_at' => 'datetime',
+        'ordered_at' => 'datetime',
+        'packed_at' => 'datetime',
+        'on_way_at' => 'datetime',
         'delivered_at' => 'datetime',
     ];
-    public const STATUS_PACKING = 1;
-    public const STATUS_ON_WAY = 2;
-    public const STATUS_DELIVERED = 3;
-    public function products(): BelongsToMany
+
+    protected $appends = [
+        'waiting_minutes',
+    ];
+
+    public function customer()
     {
-        return $this->belongsToMany(Product::class, 'order_product')
-                    ->withPivot('quantity')
-                    ->withTimestamps();
+        return $this->belongsTo(User::class, 'customer_id');
     }
 
-    public function customer(): BelongsTo
+    public function driver()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(User::class, 'driver_id');
     }
 
-    public function driver(): BelongsTo
+    public function region()
     {
-        return $this->belongsTo(Driver::class);
+        return $this->belongsTo(Region::class);
     }
-    public function getPackingDurationAttribute()
+
+    public function items()
     {
-        if ($this->picked_up_at) {
-            return $this->created_at->diffInMinutes($this->picked_up_at);
-        }
-        return $this->created_at->diffInMinutes(now());
+        return $this->hasMany(OrderItem::class);
     }
-    public function getDeliveryDurationAttribute()
+
+    public function getWaitingMinutesAttribute()
     {
-        if (!$this->picked_up_at) {
-            return 0;
-        }
-        if ($this->delivered_at) {
-            return $this->picked_up_at->diffInMinutes($this->delivered_at);
-        }
-        return $this->picked_up_at->diffInMinutes(now());
+        $from = $this->ordered_at ?? $this->created_at;
+        return $from ? $from->diffInMinutes(now()) : null;
     }
 }

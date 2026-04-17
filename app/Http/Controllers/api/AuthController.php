@@ -1,62 +1,46 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use App\Services\AuthService;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\AuthResource;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
-    /**
-     * Tizimga kirish va Token olish
-     */
-    public function login(Request $request)
+    public function __construct(
+        protected AuthService $authService
+    ) {}
+
+    public function register(RegisterRequest $request): AuthResource
     {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-        ]);
+        $result = $this->authService->register($request->validated());
 
-        $user = User::where('email', $request->email)->first();
-
-        // Parolni tekshirish
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Kiritilgan ma\'lumotlar xato.'],
+        return (new AuthResource($result))
+            ->additional([
+                'success' => true,
             ]);
-        }
-
-        // Eski tokenlarni o'chirish (ixtiyoriy, xavfsizlik uchun)
-        $user->tokens()->delete();
-
-        // Yangi token yaratish
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success'      => true,
-            'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'user'         => [
-                'name' => $user->name,
-                'role' => $user->role,
-            ]
-        ]);
     }
 
-    /**
-     * Tizimdan chiqish (Tokenni bekor qilish)
-     */
-    public function logout(Request $request)
+    public function login(LoginRequest $request): AuthResource
     {
-        // Joriy tokenni o'chirish
-        $request->user()->currentAccessToken()->delete();
+        $result = $this->authService->login($request->validated());
+
+        return (new AuthResource($result))
+            ->additional([
+                'success' => true,
+            ]);
+    }
+
+    public function logout(): JsonResponse
+    {
+        $result = $this->authService->logout(request()->user());
 
         return response()->json([
             'success' => true,
-            'message' => 'Tizimdan muvaffaqiyatli chiqildi.'
+            'message' => $result['message'],
         ]);
     }
 }

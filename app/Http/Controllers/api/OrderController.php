@@ -1,32 +1,65 @@
 <?php
-namespace App\Http\Controllers\Api;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreOrderRequest;
-use App\Http\Resources\OrderResource;
-use App\Services\OrderService;
+
+namespace App\Http\Controllers;
+
 use App\Models\Order;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\OrderResource;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateOrderStatusRequest;
+
 class OrderController extends Controller
 {
-    public function __construct(protected OrderService $orderService) {
-        //...
-    }
-    public function store(StoreOrderRequest $request)
+    public function __construct(
+        protected OrderService $orderService
+    ) {}
+
+    public function index(Request $request)
     {
-        $order = $this->orderService->createOrder($request->validated());
-        return new OrderResource($order);
+        $perPage = (int) $request->get('per_page', 10);
+
+        $orders = $this->orderService->paginateForUser($request->user(), $perPage);
+
+        return OrderResource::collection($orders);
     }
-    public function changeStatus(Request $request, Order $order)
+
+    public function store(StoreOrderRequest $request): JsonResponse
     {
-        $request->validate([
-            'status' => 'required|in:packing,on_way,delivered',
-            'driver_id' => 'nullable|exists:drivers,id'
-        ]);
-        $order = $this->orderService->updateStatus(
-            $order, 
-            $request->status, 
-            $request->driver_id
+        $order = $this->orderService->store(
+            $request->validated(),
+            $request->user()
         );
-        return new OrderResource($order);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order created successfully',
+            'data' => new OrderResource($order),
+        ], 201);
+    }
+
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
+    {
+        $order = $this->orderService->updateStatus(
+            $request->validated(),
+            $order,
+            $request->user()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated successfully',
+            'data' => new OrderResource($order),
+        ]);
+    }
+
+    public function pendingDeliveries(Request $request)
+    {
+        $perPage = (int) $request->get('per_page', 10);
+
+        $orders = $this->orderService->pendingDeliveries($perPage);
+
+        return OrderResource::collection($orders);
     }
 }
