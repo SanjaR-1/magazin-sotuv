@@ -10,7 +10,7 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'Prtype_id',
+        'prtype_id',
         'name',
         'description',
         'price',
@@ -20,7 +20,7 @@ class Product extends Model
 
     public function type()
     {
-        return $this->belongsTo(PrType::class, 'Prtype_id');
+        return $this->belongsTo(PrType::class, 'prtype_id');
     }
 
     public function orderItems()

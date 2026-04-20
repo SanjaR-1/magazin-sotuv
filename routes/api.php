@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\UserController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -21,20 +21,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/my-orders', [OrderController::class, 'index']);
     });
-
     Route::middleware('role:driver')->group(function () {
         Route::get('/driver-orders', [OrderController::class, 'index']);
-        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::get('/packing-deliveries', [OrderController::class, 'packingDeliveries']);
+        Route::put('/orders/{order}/take', [OrderController::class, 'takeOrder']);
+        Route::patch('/orders/{order}/deliver', [OrderController::class, 'deliverOrder']);
     });
 
-   Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::post('/products', [ProductController::class, 'store']);
         Route::put('/products/{product}', [ProductController::class, 'update']);
         Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 
         Route::get('/orders', [OrderController::class, 'index']);
-        Route::get('/pending-deliveries', [OrderController::class, 'pendingDeliveries']);
-        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
 
         Route::get('/reports/driver-stats', [ReportController::class, 'driverStats']);
         Route::get('/reports/product-sales', [ReportController::class, 'productSales']);

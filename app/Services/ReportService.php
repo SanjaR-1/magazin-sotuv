@@ -8,10 +8,8 @@ use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
-class ReportService
-{
-    public function driverStats(): Collection
-    {
+class ReportService{
+    public function driverStats(): Collection{
         return User::where('role', 'driver')
             ->withCount([
                 'driverOrders as delivered_orders_count' => function ($q) {
@@ -24,12 +22,10 @@ class ReportService
                     ->where('status', 'delivered')
                     ->distinct('customer_id')
                     ->count('customer_id');
-
                 $totalItems = OrderItem::whereHas('order', function ($q) use ($driver) {
                     $q->where('driver_id', $driver->id)
                         ->where('status', 'delivered');
                 })->sum('quantity');
-
                 return [
                     'driver_id' => $driver->id,
                     'driver_name' => trim($driver->first_name . ' ' . $driver->last_name),
@@ -40,9 +36,7 @@ class ReportService
                 ];
             });
     }
-
-    public function productSales()
-    {
+    public function productSales(){
         return OrderItem::select(
                 'product_id',
                 'product_name',
@@ -56,9 +50,7 @@ class ReportService
             ->orderByDesc('total_sold')
             ->get();
     }
-
-    public function regionSales(): Collection
-    {
+    public function regionSales(): Collection{
         return Order::select(
                 'region_id',
                 DB::raw('COUNT(*) as orders_count')
