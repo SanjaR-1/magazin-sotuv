@@ -25,7 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/driver-orders', [OrderController::class, 'index']);
         Route::get('/packing-deliveries', [OrderController::class, 'packingDeliveries']);
         Route::put('/orders/{order}/take', [OrderController::class, 'takeOrder']);
-        Route::patch('/orders/{order}/deliver', [OrderController::class, 'deliverOrder']);
+        Route::put('/orders/{order}/deliver', [OrderController::class, 'deliverOrder']);
     });
 
     Route::middleware('role:admin')->group(function () {
